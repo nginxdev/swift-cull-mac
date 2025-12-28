@@ -1,4 +1,5 @@
 import SwiftUI
+import UniformTypeIdentifiers
 
 /// The main view of the RAW Image Gallery application.
 ///
@@ -23,6 +24,9 @@ struct ContentView: View {
     @State private var filterRating: Int = 0
     @State private var filterCategories: Set<Int> = []
     
+    // Export State
+    @State private var isExportPresented = false
+    
     // Filtered Images
     private var filteredImages: [ImageFile] {
         if filterRating == 0 && filterCategories.isEmpty {
@@ -30,23 +34,10 @@ struct ContentView: View {
         }
         
         return scanner.images.filter { image in
-            // Filter by Rating (Exact or Greater? Let's do exact match for specific culling, or maybe >=. 
-            // "Filter by rating" usually implies showing that rating. 
-            // If user selects 5 stars, they want to see 5 star images.
-            // Let's implement EXACT match for now as it's cleaner, or >= if requested. 
-            // User said "filter by rating". Usually in culling >= is useful. 
-            // But let's stick to Exact for consistency with "Show me 5 star photos".
-            // Actually, for categories it's inclusion. 
-            // Let's go with EXACT match for rating based on common behavior in such apps (lightroom can do both).
-            // Let's do >= for rating? No, user might want to see unrelated unrated ones. 
-            // Let's do Exact match as it's intuitive for "I want to see my 5 star shots".
-            
+            // Filter by Rating (Exact match)
             let ratingMatch = filterRating == 0 || ratingStore.getRating(for: image.url) == filterRating
             
             // Filter by Categories (Match ANY selected)
-            // If multiple categories are selected in filter, show images that have AT LEAST ONE of them? 
-            // Or ALL? User said "multiple cats are allowed". 
-            // Usually it's OR logic (Show me Red OR Blue).
             let imageCategories = categoryStore.getCategories(for: image.url)
             let categoryMatch = filterCategories.isEmpty || !filterCategories.isDisjoint(with: imageCategories)
             
@@ -250,8 +241,71 @@ struct ContentView: View {
         .frame(width: 300)
     }
     
+    private var exportOverlay: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("Export Data")
+                .font(.headline)
+            
+            Text("Export the current list of \(filteredImages.count) images.")
+                .font(.caption)
+                .foregroundColor(.secondary)
+            
+            Divider()
+            
+            Button(action: exportCSV) {
+                HStack {
+                    Image(systemName: "tablecells")
+                    VStack(alignment: .leading) {
+                        Text("Export CSV")
+                            .font(.body)
+                        Text("Includes Name, Path, Rating, Categories")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                    Spacer()
+                }
+                .padding(8)
+                .background(Color.gray.opacity(0.1))
+                .cornerRadius(8)
+            }
+            .buttonStyle(.plain)
+            
+            Button(action: exportFilenames) {
+                HStack {
+                    Image(systemName: "text.alignleft")
+                    VStack(alignment: .leading) {
+                        Text("Export Filenames")
+                            .font(.body)
+                        Text("Comma-separated list of filenames")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                    Spacer()
+                }
+                .padding(8)
+                .background(Color.gray.opacity(0.1))
+                .cornerRadius(8)
+            }
+            .buttonStyle(.plain)
+        }
+        .padding()
+        .frame(width: 300)
+    }
+    
     private var actionButtons: some View {
         HStack(spacing: 12) {
+            
+            // Export Button
+            Button(action: { isExportPresented.toggle() }) {
+                HStack(spacing: 6) {
+                    Image(systemName: "square.and.arrow.up")
+                    Text("Export")
+                }
+            }
+            .buttonStyle(.bordered)
+            .popover(isPresented: $isExportPresented, arrowEdge: .bottom) {
+                exportOverlay
+            }
             
             // Filter Button
             Button(action: { isFilterPresented.toggle() }) {
@@ -330,6 +384,74 @@ struct ContentView: View {
             currentImageIndex = newIndex
             if showingDetailView {
                 selectedImage = filteredImages[newIndex]
+            }
+        }
+    }
+    
+    // MARK: - Export Logic
+    
+    private func exportCSV() {
+        isExportPresented = false
+        
+        let header = "Name,Path,Rating,Categories\n"
+        let rows = filteredImages.map { image -> String in
+            let name = image.url.lastPathComponent
+            // Relative path logic
+            let path: String
+            if let root = selectedFolder {
+                path = image.url.path(percentEncoded: false).replacingOccurrences(of: root.path(percentEncoded: false), with: "")
+            } else {
+                path = image.url.path(percentEncoded: false)
+            }
+            
+            let rating = ratingStore.getRating(for: image.url)
+            
+            let categories = categoryStore.getCategories(for: image.url)
+            let categoryNames = categories.map { id in
+                switch id {
+                case 1: return "Red"
+                case 2: return "Orange"
+                case 3: return "Yellow"
+                case 4: return "Green"
+                case 5: return "Blue"
+                default: return "Unknown"
+                }
+            }.joined(separator: "|")
+            
+            // Sanitize for CSV (simple quoting if needed, though simpler formats might not need it for typical filenames)
+            // But let's be safe if name has comma
+            let safeName = name.contains(",") ? "\"\(name)\"" : name
+            let safePath = path.contains(",") ? "\"\(path)\"" : path
+            
+            return "\(safeName),\(safePath),\(rating),\(categoryNames)"
+        }.joined(separator: "\n")
+        
+        let content = header + rows
+        saveFile(content: content, defaultName: "swiftcull-export.csv", type: .commaSeparatedText)
+    }
+    
+    private func exportFilenames() {
+        isExportPresented = false
+        
+        let filenames = filteredImages.map { $0.url.lastPathComponent }.joined(separator: ", ")
+        saveFile(content: filenames, defaultName: "filenames.txt", type: .plainText)
+    }
+    
+    private func saveFile(content: String, defaultName: String, type: UTType) {
+        let savePanel = NSSavePanel()
+        savePanel.allowedContentTypes = [type]
+        savePanel.nameFieldStringValue = defaultName
+        savePanel.canCreateDirectories = true
+        savePanel.title = "Export Data"
+        
+        savePanel.begin { response in
+            if response == .OK, let url = savePanel.url {
+                do {
+                    try content.write(to: url, atomically: true, encoding: .utf8)
+                } catch {
+                    print("Error saving file: \(error)")
+                    // Ideally show an alert here
+                }
             }
         }
     }
