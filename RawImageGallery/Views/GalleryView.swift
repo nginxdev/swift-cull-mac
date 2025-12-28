@@ -4,7 +4,7 @@ import SwiftUI
 ///
 /// Supports keyboard navigation, single-click selection, and double-click to open detail view.
 struct GalleryView: View {
-    @ObservedObject var scanner: ImageScanner
+    let images: [ImageFile]
     @EnvironmentObject var ratingStore: RatingStore
     @EnvironmentObject var categoryStore: CategoryStore
     @Binding var selectedImage: ImageFile?
@@ -13,30 +13,54 @@ struct GalleryView: View {
     let showCategories: Bool
     @FocusState private var isFocused: Bool
     
-    private let columns = [
-        GridItem(.adaptive(minimum: 200, maximum: 200), spacing: 16)
-    ]
+    @State private var gridWidth: CGFloat = 0
     
-    private var columnsPerRow: Int { 4 }
+    private let itemSize: CGFloat = 200
+    private let spacing: CGFloat = 16
+    
+    private var columns: [GridItem] {
+        Array(repeating: GridItem(.fixed(itemSize), spacing: spacing), count: columnsPerRow)
+    }
+    
+    private var columnsPerRow: Int {
+        let count = Int((gridWidth + spacing) / (itemSize + spacing))
+        return max(1, count)
+    }
     
     var body: some View {
-        ScrollView {
-            if scanner.images.isEmpty {
-                emptyStateView
-            } else {
-                imageGrid
+        GeometryReader { geometry in
+            ScrollViewReader { proxy in
+                ScrollView {
+                    if images.isEmpty {
+                        emptyStateView
+                            .frame(minHeight: geometry.size.height)
+                    } else {
+                        imageGrid
+                            .padding(spacing)
+                    }
+                }
+                .onChange(of: selectedIndex) { _, newIndex in
+                    if let index = newIndex {
+                        withAnimation {
+                            proxy.scrollTo(index, anchor: .center)
+                        }
+                    }
+                }
+            }
+            .background(Color(NSColor.windowBackgroundColor))
+            .onChange(of: geometry.size.width) { _, newWidth in
+                gridWidth = newWidth - (spacing * 2) // Account for padding
+            }
+            .onAppear {
+                gridWidth = geometry.size.width - (spacing * 2)
             }
         }
-        .background(Color(NSColor.windowBackgroundColor))
         .focusable()
         .focused($isFocused)
-        .onAppear {
-            isFocused = true
-        }
-        .onKeyPress(.upArrow) { moveSelection(by: -columnsPerRow) }
-        .onKeyPress(.downArrow) { moveSelection(by: columnsPerRow) }
         .onKeyPress(.leftArrow) { moveSelection(by: -1) }
         .onKeyPress(.rightArrow) { moveSelection(by: 1) }
+        .onKeyPress(.downArrow) { moveSelection(by: columnsPerRow) }
+        .onKeyPress(.upArrow) { moveSelection(by: -columnsPerRow) }
         .onKeyPress("0") { setRatingForSelected(0) }
         .onKeyPress("1") { setRatingForSelected(1) }
         .onKeyPress("2") { setRatingForSelected(2) }
@@ -44,10 +68,13 @@ struct GalleryView: View {
         .onKeyPress("4") { setRatingForSelected(4) }
         .onKeyPress("5") { setRatingForSelected(5) }
         .onKeyPress(.space) {
-            if let index = selectedIndex {
-                selectedImage = scanner.images[index]
+            if let index = selectedIndex, index < images.count {
+                selectedImage = images[index]
             }
             return .handled
+        }
+        .onAppear {
+            isFocused = true
         }
     }
     
@@ -71,7 +98,7 @@ struct GalleryView: View {
     
     private var imageGrid: some View {
         LazyVGrid(columns: columns, spacing: 16) {
-            ForEach(Array(scanner.images.enumerated()), id: \.element.id) { index, imageFile in
+            ForEach(Array(images.enumerated()), id: \.element.id) { index, imageFile in
                 ImageCell(
                     imageFile: imageFile,
                     rating: Binding(
@@ -98,6 +125,7 @@ struct GalleryView: View {
                             selectedIndex = index
                         }
                 )
+                .id(index)
             }
         }
         .padding(16)
@@ -110,10 +138,10 @@ struct GalleryView: View {
     /// - Parameter offset: The number of positions to move (negative for backwards).
     /// - Returns: A key press result indicating the key was handled.
     private func moveSelection(by offset: Int) -> KeyPress.Result {
-        guard !scanner.images.isEmpty else { return .handled }
+        guard !images.isEmpty else { return .handled }
         
         if let current = selectedIndex {
-            let newIndex = max(0, min(scanner.images.count - 1, current + offset))
+            let newIndex = max(0, min(images.count - 1, current + offset))
             selectedIndex = newIndex
         } else {
             selectedIndex = 0
@@ -126,8 +154,8 @@ struct GalleryView: View {
     /// - Parameter rating: The rating value to set (0-5).
     /// - Returns: A key press result indicating the key was handled.
     private func setRatingForSelected(_ rating: Int) -> KeyPress.Result {
-        guard let index = selectedIndex else { return .handled }
-        let imageFile = scanner.images[index]
+        guard let index = selectedIndex, index < images.count else { return .handled }
+        let imageFile = images[index]
         ratingStore.setRating(rating, for: imageFile.url)
         return .handled
     }
