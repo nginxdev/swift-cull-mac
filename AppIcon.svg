@@ -1,0 +1,84 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background gradient -->
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#4F46E5;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#7C3AED;stop-opacity:1" />
+    </linearGradient>
+    
+    <linearGradient id="starGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FCD34D;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#F59E0B;stop-opacity:1" />
+    </linearGradient>
+    
+    <!-- Shadow filter -->
+    <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="8"/>
+      <feOffset dx="0" dy="4" result="offsetblur"/>
+      <feComponentTransfer>
+        <feFuncA type="linear" slope="0.3"/>
+      </feComponentTransfer>
+      <feMerge>
+        <feMergeNode/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="1024" height="1024" fill="url(#bgGradient)"/>
+  
+  <!-- Photo frame stack (representing multiple images) -->
+  <g filter="url(#shadow)">
+    <!-- Back frame -->
+    <rect x="200" y="220" width="580" height="520" rx="24" fill="#FFFFFF" opacity="0.15" transform="rotate(-4 490 480)"/>
+    
+    <!-- Middle frame -->
+    <rect x="200" y="220" width="580" height="520" rx="24" fill="#FFFFFF" opacity="0.25" transform="rotate(2 490 480)"/>
+    
+    <!-- Front frame (main) -->
+    <rect x="200" y="220" width="580" height="520" rx="24" fill="#FFFFFF" opacity="0.95"/>
+    
+    <!-- Image placeholder inside frame -->
+    <rect x="230" y="250" width="520" height="380" rx="12" fill="#E5E7EB"/>
+    
+    <!-- Mountain icon in placeholder -->
+    <path d="M 350 520 L 450 380 L 550 480 L 650 420 L 750 630 L 230 630 Z" fill="#9CA3AF"/>
+    <circle cx="620" cy="340" r="40" fill="#FCD34D"/>
+    
+    <!-- Rating stars at bottom of frame -->
+    <g transform="translate(300, 660)">
+      <!-- Star 1 -->
+      <path d="M 40 0 L 48 24 L 73 24 L 53 38 L 61 62 L 40 48 L 19 62 L 27 38 L 7 24 L 32 24 Z" 
+            fill="url(#starGradient)"/>
+      
+      <!-- Star 2 -->
+      <path d="M 140 0 L 148 24 L 173 24 L 153 38 L 161 62 L 140 48 L 119 62 L 127 38 L 107 24 L 132 24 Z" 
+            fill="url(#starGradient)"/>
+      
+      <!-- Star 3 -->
+      <path d="M 240 0 L 248 24 L 273 24 L 253 38 L 261 62 L 240 48 L 219 62 L 227 38 L 207 24 L 232 24 Z" 
+            fill="url(#starGradient)"/>
+      
+      <!-- Star 4 (outlined) -->
+      <path d="M 340 0 L 348 24 L 373 24 L 353 38 L 361 62 L 340 48 L 319 62 L 327 38 L 307 24 L 332 24 Z" 
+            fill="none" stroke="#D1D5DB" stroke-width="3"/>
+      
+      <!-- Star 5 (outlined) -->
+      <path d="M 440 0 L 448 24 L 473 24 L 453 38 L 461 62 L 440 48 L 419 62 L 427 38 L 407 24 L 432 24 Z" 
+            fill="none" stroke="#D1D5DB" stroke-width="3"/>
+    </g>
+  </g>
+  
+  <!-- Checkmark badge (culling indicator) -->
+  <g filter="url(#shadow)">
+    <circle cx="780" cy="320" r="100" fill="#10B981"/>
+    <circle cx="780" cy="320" r="90" fill="#FFFFFF" opacity="0.2"/>
+    <path d="M 720 320 L 760 360 L 840 280" 
+          fill="none" 
+          stroke="#FFFFFF" 
+          stroke-width="20" 
+          stroke-linecap="round" 
+          stroke-linejoin="round"/>
+  </g>
+</svg>
