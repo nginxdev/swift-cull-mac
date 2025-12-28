@@ -18,14 +18,50 @@ struct ContentView: View {
     @State private var showClearRatingsAlert = false
     @State private var showClearCategoriesAlert = false
     
+    // Filter State
+    @State private var isFilterPresented = false
+    @State private var filterRating: Int = 0
+    @State private var filterCategories: Set<Int> = []
+    
+    // Filtered Images
+    private var filteredImages: [ImageFile] {
+        if filterRating == 0 && filterCategories.isEmpty {
+            return scanner.images
+        }
+        
+        return scanner.images.filter { image in
+            // Filter by Rating (Exact or Greater? Let's do exact match for specific culling, or maybe >=. 
+            // "Filter by rating" usually implies showing that rating. 
+            // If user selects 5 stars, they want to see 5 star images.
+            // Let's implement EXACT match for now as it's cleaner, or >= if requested. 
+            // User said "filter by rating". Usually in culling >= is useful. 
+            // But let's stick to Exact for consistency with "Show me 5 star photos".
+            // Actually, for categories it's inclusion. 
+            // Let's go with EXACT match for rating based on common behavior in such apps (lightroom can do both).
+            // Let's do >= for rating? No, user might want to see unrelated unrated ones. 
+            // Let's do Exact match as it's intuitive for "I want to see my 5 star shots".
+            
+            let ratingMatch = filterRating == 0 || ratingStore.getRating(for: image.url) == filterRating
+            
+            // Filter by Categories (Match ANY selected)
+            // If multiple categories are selected in filter, show images that have AT LEAST ONE of them? 
+            // Or ALL? User said "multiple cats are allowed". 
+            // Usually it's OR logic (Show me Red OR Blue).
+            let imageCategories = categoryStore.getCategories(for: image.url)
+            let categoryMatch = filterCategories.isEmpty || !filterCategories.isDisjoint(with: imageCategories)
+            
+            return ratingMatch && categoryMatch
+        }
+    }
+    
     var body: some View {
         ZStack {
             VStack(spacing: 0) {
                 toolbar
                 Divider()
-                
+                // Gallery view
                 GalleryView(
-                    scanner: scanner,
+                    images: filteredImages,
                     selectedImage: $selectedImage,
                     showRatings: showRatings,
                     showCategories: showCategories
@@ -55,7 +91,7 @@ struct ContentView: View {
         }
         .onChange(of: selectedImage) { _, newValue in
             if let image = newValue {
-                currentImageIndex = scanner.images.firstIndex(of: image)
+                currentImageIndex = filteredImages.firstIndex(of: image)
                 withAnimation(.easeInOut(duration: 0.2)) {
                     showingDetailView = true
                 }
@@ -134,8 +170,102 @@ struct ContentView: View {
         }
     }
     
+    private var filterOverlay: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("Filter Images")
+                .font(.headline)
+            
+            Divider()
+            
+            // Rating Filter
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    Text("By Rating")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                    Spacer()
+                    if filterRating > 0 {
+                        Button("Clear") { filterRating = 0 }
+                            .buttonStyle(.link)
+                            .font(.caption)
+                    }
+                }
+                
+                HStack {
+                    StarRatingView(rating: $filterRating, interactive: true, size: 24)
+                    if filterRating == 0 {
+                        Text("Any")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                            .padding(.leading, 4)
+                    }
+                }
+                .padding(8)
+                .background(Color.gray.opacity(0.1))
+                .cornerRadius(8)
+            }
+            
+            // Category Filter
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    Text("By Category")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                    Spacer()
+                    if !filterCategories.isEmpty {
+                        Button("Clear") { filterCategories.removeAll() }
+                            .buttonStyle(.link)
+                            .font(.caption)
+                    }
+                }
+                
+                HStack {
+                    ColorCategoryView(selectedCategories: $filterCategories, interactive: true, size: 24)
+                    if filterCategories.isEmpty {
+                        Text("Any")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                            .padding(.leading, 4)
+                    }
+                }
+                .padding(8)
+                .background(Color.gray.opacity(0.1))
+                .cornerRadius(8)
+            }
+            
+            if filterRating > 0 || !filterCategories.isEmpty {
+                Divider()
+                Button(action: {
+                    filterRating = 0
+                    filterCategories.removeAll()
+                    isFilterPresented = false
+                }) {
+                    Text("Reset All Filters")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.bordered)
+            }
+        }
+        .padding()
+        .frame(width: 300)
+    }
+    
     private var actionButtons: some View {
         HStack(spacing: 12) {
+            
+            // Filter Button
+            Button(action: { isFilterPresented.toggle() }) {
+                HStack(spacing: 6) {
+                    Image(systemName: "line.3.horizontal.decrease.circle" + (filterRating > 0 || !filterCategories.isEmpty ? ".fill" : ""))
+                    Text("Filter")
+                }
+            }
+            .buttonStyle(.bordered)
+            .tint(filterRating > 0 || !filterCategories.isEmpty ? .accentColor : nil)
+            .popover(isPresented: $isFilterPresented, arrowEdge: .bottom) {
+                filterOverlay
+            }
+
             Button(action: { showClearRatingsAlert = true }) {
                 Label("Clear Ratings", systemImage: "star.slash")
             }
@@ -157,7 +287,7 @@ struct ContentView: View {
                     .font(.caption)
                     .foregroundColor(.secondary)
             } else if !scanner.images.isEmpty {
-                Text("\(scanner.images.count) images")
+                Text("\(filteredImages.count) of \(scanner.images.count)")
                     .font(.caption)
                     .foregroundColor(.secondary)
             }
@@ -193,13 +323,13 @@ struct ContentView: View {
         case .previous:
             newIndex = max(0, currentIndex - 1)
         case .next:
-            newIndex = min(scanner.images.count - 1, currentIndex + 1)
+            newIndex = min(filteredImages.count - 1, currentIndex + 1)
         }
         
         if newIndex != currentIndex {
             currentImageIndex = newIndex
             if showingDetailView {
-                selectedImage = scanner.images[newIndex]
+                selectedImage = filteredImages[newIndex]
             }
         }
     }
