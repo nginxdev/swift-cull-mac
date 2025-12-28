@@ -94,17 +94,9 @@ EOF
 
 chmod +x "$APP_BUNDLE/Contents/MacOS/$APP_NAME"
 
-# 4. cleanup
+# 5. cleanup
 echo "🧹 Cleaning up intermediate files..."
 rm -f AppIcon.png
 rm -rf "$ICON_SET"
-# We keep AppIcon.icns inside the bundle, but we can remove the source one if desired, 
-# though usually nice to have the artifact. The user asked to ignore it, so keeping it around 
-# but ignored by git is fine. 
 
-# 5. Zip
-echo "🤐 Zipping app..."
-rm -f "$ZIP_NAME"
-ditto -c -k --sequesterRsrc --keepParent "$APP_BUNDLE" "$ZIP_NAME"
-
-echo "✅ Build complete! Artifact: $ZIP_NAME"
+echo "✅ Build complete! Artifact: $APP_BUNDLE"
