@@ -9,3 +9,12 @@ DerivedData/
 *~
 .vscode/
 .idea/
+# Generated Icons
+*.icns
+*.iconset
+*.png
+!AppIcon_Source.png
+# App Bundle
+*.app
+*.zip
+
