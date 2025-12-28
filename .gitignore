@@ -14,6 +14,7 @@ DerivedData/
 *.iconset
 *.png
 !AppIcon_Source.png
+!resources/*.png
 # App Bundle
 *.app
 *.zip
