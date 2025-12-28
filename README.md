@@ -1,127 +1,116 @@
 # SwiftCull
 
-A fast, elegant macOS application for culling and organizing photo collections. Built with SwiftUI and optimized for photographers who need to quickly review, rate, and categorize large batches of images.
+A lightning-fast, native macOS application for culling and rating photos. Built with SwiftUI for photographers who need to quickly sort through thousands of RAW captured images.
 
-## Features
+![macOS](https://img.shields.io/badge/macOS-14.0+-blue.svg)
+![Swift](https://img.shields.io/badge/Swift-6.0-orange.svg)
+![License](https://img.shields.io/badge/license-MIT-green.svg)
 
-### 🎯 Efficient Photo Culling
-- **Keyboard-First Workflow** - Navigate and rate images without touching the mouse
-- **RAW Format Support** - Native support for CR2, CR3, NEF, ARW, DNG, and 20+ RAW formats
-- **Smart File Handling** - Automatically prefers RAW over JPEG when both exist
+---
 
-### ⭐ Rating System
-- **5-Star Ratings** - Quick image quality assessment
-- **Keyboard Shortcuts** - Press 0-5 to rate instantly
-- **Persistent Storage** - Ratings saved in local SQLite database
+## 📸 App
+![SwiftCull App](resources/app-screenshot.png)
 
-### 🎨 Color Categories
-- **5 Color Categories** - Organize images by type, subject, or workflow
-- **Multiple Selection** - Assign multiple categories per image
-- **Visual Indicators** - Quick visual feedback with color-coded circles
+---
 
-### ⚡ Performance
-- **Thumbnail Caching** - Fast scrolling through large collections
-- **Async Loading** - Non-blocking image processing
-- **Optimized Rendering** - Smooth 60fps interface
+## ✨ Features
 
-### 🎨 Modern UI
-- **Finder-Like Experience** - Single-click select, double-click open
-- **Full-Screen Preview** - Distraction-free image viewing
-- **Frosted Glass Design** - Beautiful, native macOS aesthetics
+### 🚀 **High Performance**
+- **RAW Support**: Native support for 25+ RAW formats (ARW, CR2, NEF, RAF, etc.)
+- **Instant Preview**: Fast loading of high-resolution embedded previews
+- **Zero Latency**: Keyboard-driven workflow designed for speed
+- **Efficient**: Multi-threaded image processing and caching
 
-## Keyboard Shortcuts
+### 🔍 **Smart Filtering**
+- **Rating System**: Industry-standard 0-5 star rating workflow
+- **Color Labels**: Organize with 5 color-coded categories
+- **Advanced Filters**: View only images matching specific ratings or labels
+- **Filter Overlay**: Quick access to active filter controls
 
-### Gallery View
-- **Arrow Keys** - Navigate selection (Finder-style grid navigation)
-- **0-5** - Rate selected image
-- **Space/Enter** - Open preview
-- **Double-Click** - Open preview
+### 💎 **Modern Experience**
+- **Native UI**: Built with SwiftUI for a seamless macOS experience
+- **Dark Mode**: Optimized dark interface for photo viewing
+- **Keyboard First**: Every action has a keyboard shortcut
+- **Gesture Support**: Trackpad navigation and interactions
 
-### Preview Mode
-- **←→** - Navigate between images
-- **0-5** - Rate current image
-- **Escape** - Close preview
-- **Swipe** - Navigate with trackpad
+---
 
-## Requirements
+## 🛠️ System Requirements
+- **macOS**: 14.0 (Sonoma) or later
+- **Architecture**: Apple Silicon (M1/M2/M3) or Intel
+- **Disk Space**: ~20 MB
 
-- macOS 14.0 (Sonoma) or later
-- Swift 5.9+
+---
 
-## Installation
+## 📦 Installation
 
-### Build from Source
+### ⚡ Quick Install (Recommended)
+**Download the pre-built app and start using it immediately:**
+
+1. **Download the latest release**
+   - Go to the [**Releases**](https://github.com/nginxdev/swift-cull-mac/releases) page
+   - Download `SwiftCull-v1.0.1.zip` from the latest release
+
+2. **Install the app**
+   - Unzip the downloaded file
+   - Drag `SwiftCull.app` to your **Applications** folder
+
+3. **First launch**
+   - Open **Applications** folder
+   - Right-click on `SwiftCull.app` and select **Open**
+   - Click **Open** in the security dialog (required for first launch only)
+
+> **Note**: This app is not notarized yet. You will need to right-click and open to bypass Gatekeeper on the first run.
+
+---
+
+### 🔨 Build from Source
 
 ```bash
-git clone https://github.com/yourusername/swift-cull-mac.git
+# Clone the repository
+git clone https://github.com/nginxdev/swift-cull-mac.git
 cd swift-cull-mac
-swift build -c release
-.build/release/SwiftCull
+
+# Build the release version
+./build_app.sh
+
+# The app bundle will be created in the current directory as SwiftCull.app
+open SwiftCull.app
 ```
 
-## Usage
+---
 
-1. **Select a Folder** - Click the folder button to choose your image directory
-2. **Review Images** - Use arrow keys to navigate through thumbnails
-3. **Rate & Categorize** - Press 0-5 for ratings, click color circles for categories
-4. **Preview** - Double-click or press Space/Enter for full-screen view
+## 🎯 How to Use
 
-## Architecture
+### 1️⃣ **Select Folder**
+Click the folder icon or button in the toolbar to choose a directory containing your images. The app will automatically scan for supported image files.
 
-SwiftCull follows Apple's coding standards and best practices:
+### 2️⃣ **Review & Rate**
+Use keyboard shortcuts to fly through your images:
 
-- **SwiftUI** - Modern declarative UI framework
-- **Async/Await** - Concurrent image loading
-- **SQLite** - Persistent local storage
-- **Core Graphics** - Native RAW image decoding
-- **MVVM Pattern** - Clean separation of concerns
+**Navigation:**
+- `Arrow Keys`: Navigate grid or move to next/previous image
+- `Space` / `Enter`: Open selected image in full screen
 
-### Project Structure
+**Rating:**
+- `1` - `5`: Set Star Rating
+- `0`: Clear Rating
 
-```
-RawImageGallery/
-├── Models/          # Data models and stores
-│   ├── ImageFile.swift
-│   ├── ImageScanner.swift
-│   ├── RatingStore.swift
-│   └── CategoryStore.swift
-├── Views/           # SwiftUI views
-│   ├── ContentView.swift
-│   ├── GalleryView.swift
-│   ├── ImageDetailView.swift
-│   ├── ImageCell.swift
-│   ├── ColorCategoryView.swift
-│   └── StarRatingView.swift
-└── Services/        # Utilities
-    └── RawImageLoader.swift
-```
+**Filtering:**
+- Click the **Filter** button in the top right to show only specific ratings or categories.
 
-## Supported Formats
+---
 
-### Standard Formats
-- JPEG (.jpg, .jpeg)
-- PNG (.png)
-- HEIC/HEIF (.heic, .heif)
-- TIFF (.tif, .tiff)
-
-### RAW Formats
-- Canon (.cr2, .cr3)
-- Nikon (.nef)
-- Sony (.arw)
-- Adobe (.dng)
-- Fujifilm (.raf)
-- Olympus (.orf)
-- Panasonic (.rw2)
-- And 15+ more camera formats
-
-## License
-
-MIT License - See LICENSE file for details
-
-## Contributing
+## 🤝 Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
 
-## Author
+---
 
-Built with ❤️ for photographers who value speed and efficiency.
+## 📝 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 👨‍💻 Author
+
+Built with ❤️ by **nginxdev**.
